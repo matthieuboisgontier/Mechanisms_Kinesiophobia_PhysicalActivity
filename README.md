@@ -1,1 +1,1 @@
-# Kinesiophobia_Physical-Activity_Attitudes
+# Kinesiophobia, physical activity and affective attitudes in arthritis
