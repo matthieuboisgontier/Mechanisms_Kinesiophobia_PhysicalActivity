@@ -15,6 +15,8 @@ library("effects")
 library("ggplot2")
 # For testing LMM assumptions
 library("lattice")
+# For mediation analysis
+library("lavaan")
 
 # read in data ------
 data1 <- read.csv(here("datasets_arthritis", "2024-05-09_data_arthritis.csv"))
@@ -34,7 +36,8 @@ cleandata1 <- data1 %>%
 names(cleandata1)
 unique(data1$chronic8_arthritis)
 unique(data1$chronic12_parkinson)
-
+unique(data1$id)
+unique(data1$gender)
 # adding column with trial number of the whole study
 cleandata1 <- cleandata1 %>%
   group_by(id) %>%
@@ -56,6 +59,16 @@ cleandata1 <- cleandata1 %>%
   mutate(bmi = (weight/I(height_m^2)))
 #plot(cleandata1$bmi)
 describe(cleandata1$weight)
+
+
+
+cleanlightdata1 <- cleandata1[cleandata1$trialcode != "fixation" & 
+                                cleandata1$trialcode != "reminder" & 
+                                cleandata1$trialcode != "too_slow" &
+                                cleandata1$trialcode != "instructionimages"&
+                                cleandata1$trialcode != "error" 
+                              , ] 
+
 
 # removing useless conditions from the "trialcode" column ------
 # removing first 10 trials of each block ------
@@ -172,7 +185,7 @@ cleanlightdata1$avoid.1.approach.0[is.element(cleanlightdata1$approach  ,c("1"))
 cleanlightdata1$avoid.1.approach.0[is.element(cleanlightdata1$approach  ,c("0"))] <- "1"
 
 # reversing coding of correct trial = 1 and error = 0 to correct trial = 0 and error = 1
-cleanlightdata1$error <- NA
+cleanlightdata1$errorcleanlightdata1$error <- NA
 cleanlightdata1$error[is.element(cleanlightdata1$correct  ,c("1"))] <- "0"
 cleanlightdata1$error[is.element(cleanlightdata1$correct  ,c("0"))] <- "1"
 cleanlightdata1$error <- as.numeric(as.character(cleanlightdata1$error))
@@ -185,6 +198,16 @@ cleanlightdata1$sex01[is.element(cleanlightdata1$sex ,c("Mâle"))] <- "1"
 cleanlightdata1$sex01[is.element(cleanlightdata1$sex ,c("Female"))] <- "0"
 cleanlightdata1$sex01[is.element(cleanlightdata1$sex ,c("Femelle"))] <- "0"
 unique(cleanlightdata1$sex01)
+
+# Creating binary variable for gender
+unique(cleanlightdata1$gender)
+cleanlightdata1$gender01<- NA
+cleanlightdata1$gender01[is.element(cleanlightdata1$gender ,c("Homme"))] <- "1"
+cleanlightdata1$gender01[is.element(cleanlightdata1$gender ,c("Man"))] <- "1"
+cleanlightdata1$gender01[is.element(cleanlightdata1$gender ,c("Femme"))] <- "0"
+cleanlightdata1$gender01[is.element(cleanlightdata1$gender ,c("Woman"))] <- "0"
+unique(cleanlightdata1$gender01)
+plot (cleanlightdata1$sex01 ~ cleanlightdata1$gender01)
 
 # Reversing code of Kinesiophobia 
 cleanlightdata1$kp3r <- NA
@@ -369,6 +392,7 @@ cleanlightmeansdata1$c8 <- as.factor(as.integer(cleanlightmeansdata1$c8))
 cleanlightmeansdata1$c16 <- as.factor(as.integer(cleanlightmeansdata1$c16))
 cleanlightmeansdata1$age <- as.numeric(as.integer(cleanlightmeansdata1$age))
 cleanlightmeansdata1$sex01 <- as.factor(as.character(cleanlightmeansdata1$sex01))
+cleanlightmeansdata1$gender01 <- as.factor(as.character(cleanlightmeansdata1$gender01))
 cleanlightmeansdata1$pictograms <- as.character(as.integer(cleanlightmeansdata1$pictograms))
 cleanlightmeansdata1$sum_chronic <- as.numeric(as.integer(cleanlightmeansdata1$sum_chronic))
 cleanlightmeansdata1$computerO1 <- as.factor(as.character(cleanlightmeansdata1$computer01))
@@ -409,10 +433,9 @@ cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
   mutate(mvpa = (moderate_d*moderate_m + vigorous_d*vigorous_m)) 
 hist(cleanlightmeansdata1$mvpa)
 
-# removing participants who report physical activity > 12h per day (5040 min per week)
-cleanlightmeansdata1 <- cleanlightmeansdata1[cleanlightmeansdata1$mvpa < 5040
-                              , ] 
-hist(cleanlightmeansdata1$mvpa)
+# Identify participants who report physical activity > 12h per day (5040 min per week)
+participants_high_mvpa <- subset(cleanlightmeansdata1, mvpa > 5040)
+print(participants_high_mvpa$id)
 
 # creating column with number of minutes per week in moderate  physical activity 
 cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
@@ -457,6 +480,7 @@ data2 <- cleanlightmeansdata1
 plot(data2$kpsum)
 describe(data2$age)
 plot(data2$height)
+unique(data2$id) # n =197
 
 # exploring data -------
 glimpse(data2)
@@ -467,7 +491,7 @@ describe (data2$relativelatency)
 unique(data2$stimulus)
 
 
-# Reode stimulus
+# Reorder stimulus
 unique(data2$stimulus)
 data2$stimulus_ap0_sed1<- NA
 data2$stimulus_ap0_sed1[is.element(data2$stimulus ,c("ap"))] <- "0"
@@ -503,8 +527,8 @@ data2$biassedraw_c <- scale (data2$biassedraw, center = TRUE, scale = TRUE)
 data2$attitude_c <- scale (data2$attitude, center = TRUE, scale = TRUE)
 
 # aggrefate data per subject
-DataAggreg = aggregate (cbind(c8, c16, kpsum, attitude, pain, age, sex01, mvpa, 
-                              bmi, sum_chronic, moderatepa, vigorouspa)
+DataAggreg = aggregate (cbind(c8, c16, kpsum, attitude, pain, age, sex01, mvpa, gender01,
+                              bmi, sum_chronic, moderatepa, vigorouspa, biassedcorr, biasapcorr)
                         ~id, data=data2, FUN=mean)
 
 # centration
@@ -514,6 +538,8 @@ DataAggreg$mvpa_c <- scale (DataAggreg$mvpa, center = TRUE, scale = TRUE)
 DataAggreg$pain_c <- scale (DataAggreg$pain, center = TRUE, scale = TRUE)
 DataAggreg$kpsum_c <- scale (DataAggreg$kpsum, center = TRUE, scale = TRUE)
 DataAggreg$attitude_c <- scale (DataAggreg$attitude, center = TRUE, scale = TRUE)
+DataAggreg$biassedcorr_c <- scale (DataAggreg$biassedcorr, center = TRUE, scale = TRUE)
+DataAggreg$biasapcorr_c <- scale (DataAggreg$biasapcorr, center = TRUE, scale = TRUE)
 
 # Reverse Rhumathoid Arthritis no = 1 yest = 2 to no = 1 yes = 0
 unique(DataAggreg$c16)
@@ -534,12 +560,6 @@ DataAggreg$sex01 <- as.factor(as.numeric(DataAggreg$sex01))
 DataAggreg$c8 <- as.factor(as.numeric(DataAggreg$c8))
 DataAggreg$c16 <- as.factor(as.numeric(DataAggreg$c16))
 DataAggreg$c16.1.0 <- as.factor(as.numeric(DataAggreg$c16.1.0))
-
-# describe
-describe (DataAggreg$age)
-describe (DataAggreg$mvpa)
-describe (DataAggreg$bmi)
-describe (DataAggreg$kpsum)
 
 # histograms
 hist (DataAggreg$kpsum)
@@ -567,71 +587,148 @@ sum(with(DataAggreg,c16 == "0"))
 sum(with(DataAggreg,c16 == "1"))
 sum(with(DataAggreg,c16 == "2"))
 sum(with(DataAggreg,c16 == "2" | c8 == "2"))
+sum(with(DataAggreg,c16 == "1" & c8 == "2"))
 
 # unique
 unique(DataAggreg$c8)
 unique(DataAggreg$c16)
-
+unique(DataAggreg$id) # n = 196
 #write.csv(DataAggreg, "DataAggreg.csv")
+
+
+# DESCRIPTIVE RESULTS
+data_all <- DataAggreg # all participants
+unique(data_all$id) 
+describe (data_all$age)
+describe (data_all$kpsum)
+describe (data_all$mvpa)
+describe (data_all$pain)
+describe (data_all$bmi)
+describe (data_all$sum_chronic)
+sum(with(data_all,sex01 == "1"))
+sum(with(data_all,sex01 == "2"))
+unique (data_all$gender)
+plot (data_all$gender01~data_all$sex01)
+data_sex_gender <- data_all %>% filter((sex01 %in% "2") & (gender01 %in% "1"))
+unique(data_sex_gender$id) 
+
+data_OA <- DataAggreg %>% filter((c8 %in% "2") & (c16 %in% "1")) # participants with Osteoarthritis
+unique(data_OA$id) 
+describe (data_OA$age)
+describe (data_OA$mvpa)
+describe (data_OA$kpsum)
+describe (data_OA$pain)
+describe (data_OA$bmi)
+describe (data_OA$sum_chronic)
+sum(with(data_OA,sex01 == "1"))
+sum(with(data_OA,sex01 == "2"))
+
+data_RA <- DataAggreg %>% filter(c16 %in% "2") # participants with Rheumatoid Arthritis
+unique(data_RA$id) 
+describe (data_RA$age)
+describe (data_RA$mvpa)
+describe (data_RA$kpsum)
+describe (data_RA$pain)
+describe (data_RA$bmi)
+describe (data_RA$sum_chronic)
+sum(with(data_RA,sex01 == "1"))
+sum(with(data_RA,sex01 == "2"))
 
 
 ### STATISTICAL MODELS
 
-# Effect of kinesiophobia on MVPA in OA (osteo arthritis)
-lm1.1 <- lm (mvpa ~ kpsum_c*c8.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c16 == 1), na.action=na.omit) # no Rheumatoid Arthritis
+#Effect of kinesiophobia on MVPA in OA (osteo arthritis)
+lm1.1 <- lm (mvpa ~ kpsum_c*c8.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) # no Rheumatoid Arthritis
 summary(lm1.1)
+confint(lm1.1) #95% confidence interval
+
+#Effect of kinesiophobia on MVPA in OA (osteo arthritis)
+lm1.2 <- lm (mvpa ~ kpsum_c*c8.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c16 == 1), na.action=na.omit) # no Rheumatoid Arthritis
+summary(lm1.2)
+confint(lm1.2) #95% confidence interval
 #plot(allEffects(lm1.1))
 plot(allEffects(lm1.1), select = 6)
 
 # Effect of kinesiophobia on MVPA in RA (rheumatoid arthritis)
-lm1.2 <- lm (mvpa ~ kpsum_c*c16.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
-summary(lm1.2)
+lm1.3 <- lm (mvpa ~ kpsum_c*c16.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
+summary(lm1.3)
+confint(lm1.3)
+
 
 # Mediation analysis by attitude in Osteo Arthritis 
-mediation.1 <- lm (mvpa ~ kpsum_c + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.1 <- lm (mvpa ~ kpsum_c + pain_c  + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.1)
+confint(mediation.1)
 plot(allEffects(mediation.1 ), select = 1)
 
-mediation.2 <- lm (attitude ~ kpsum_c + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.2 <- lm (attitude ~ kpsum_c + pain_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.2)
+confint(mediation.2)
 plot(allEffects(mediation.2 ), select = 1)
 
-mediation.3 <- lm (mvpa ~ attitude + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.3 <- lm (mvpa ~ attitude_c + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.3)
+confint(mediation.3)
 plot(allEffects(mediation.3 ), select = 1)
 
-mediation.4 <- lm (mvpa ~ kpsum_c + attitude + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
-summary(mediation.4)
+
+data3  <- DataAggreg %>% filter((c8 %in% "2") & (c16 %in% "1"))
+unique(data3$id) 
+print(data3)
+sum(with(data3,c8 == "2"))
+
+
+model <- ' # direct effect
+             mvpa_c ~ p*kpsum_c + c1*pain_c + c2*biasapcorr_c + c3*biassedcorr_c+ c4*age_c + c5*sex01 + c6*bmi_c + c7*sum_chronic
+           # mediator
+             attitude ~ a*kpsum_c + c8*pain_c + c9*biasapcorr_c + c10*biassedcorr_c+ c11*age_c + c12*sex01 + c13*bmi_c + c14*sum_chronic
+             mvpa_c ~ b*attitude 
+           # indirect effect (a*b)
+             ab := a*b 
+           # total effect
+             total := p + (a*b)
+         '
+fit <- sem(model, data = data_OA)
+summary(fit)
+parameterEstimates(fit) #to extract 95 CI
 
 
 # Linear mixed effects model testing the effect of kinesiophobia on corrected Reaction Time as a function of stimulus (physical activity, sedentary behavior)
 # and action (approach, avoid)
 
-lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*kpsum_c + attitude_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id)+(1|pictograms), 
+lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*kpsum_c + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
                data=data2, subset = (stimulus == "sed"| stimulus == "ap") & (c16 == 0) & (c8 == 1) & error == 0 , REML=T, na.action=na.omit)
-# We tried the model with a more complex random structure including (1|approach) ot (1|stimulus_ap0_sed1) but it failed to converge
+# We tried the model with a more complex random structure including  (1|stimulus_ap0_sed1) but it failed to converge
 summary(lmm1.1) # kpsum NS
+confint(lmm1.1)
+
 
 plot(allEffects(lmm1.1))
-plot(allEffects(lmm1.1), select = 7)
+plot(allEffects(lmm1.1), select = 9)
 plot(Effect(c("approach", "stimulus_ap0_sed1"),mod = lmm1.1))
 
-lmm1.2 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap0_sed1 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + (1|id) + (1|pictograms), 
+lmm1.2 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap0_sed1 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 +sum_chronic +  (1|id) + (1|pictograms), 
              data=data2, subset = (stimulus == "sed"| stimulus == "ap") & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
 summary(lmm1.2) 
+confint(lmm1.2)
+plot(allEffects(lmm1.2))
+plot(allEffects(lmm1.2), select = 9)
 
-lmm1.3 <- lmer(relativelatencygeomdirection  ~ 1 + approach*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + (1|id) + (1|pictograms), 
+lmm1.3 <- lmer(relativelatencygeomdirection  ~ 1 + approach*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + (1|id) +sum_chronic +  (1|pictograms), 
                data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
 summary(lmm1.3)
+confint(lmm1.3)
 
-lmm1.4 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + (1|id) + (1|pictograms), 
+lmm1.4 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
                data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
 summary(lmm1.4) # kpsum NS
+confint(lmm1.4)
 
 
 glm1<- glmer(error ~ approach*kpsum_c*stimulus + (1|id), family="binomial", 
               data=data2, subset = (stimulus == "sed"| stimulus == "ap") & (c8 == "1" & c16 != "1"), na.action=na.omit)
 summary(glm1)
+
 
 
 ## Assumptions for linear mixed-effects models A
