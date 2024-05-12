@@ -666,7 +666,7 @@ summary(mediation.2)
 confint(mediation.2)
 plot(allEffects(mediation.2 ), select = 1)
 
-mediation.3 <- lm (mvpa ~ attitude_c + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.3 <- lm (mvpa ~ attitude + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.3)
 confint(mediation.3)
 plot(allEffects(mediation.3 ), select = 1)
@@ -725,9 +725,15 @@ summary(lmm1.4) # kpsum NS
 confint(lmm1.4)
 
 
-glm1<- glmer(error ~ approach*kpsum_c*stimulus + (1|id), family="binomial", 
-              data=data2, subset = (stimulus == "sed"| stimulus == "ap") & (c8 == "1" & c16 != "1"), na.action=na.omit)
+glm1<- glmer(error ~ approach*kpsum_c +  attitude_c + pain_c + mvpa_c +   (1|id) , family="binomial", 
+              data=data2, subset = (stimulus == "sed") & (c8 == "1" & c16 != "1"), na.action=na.omit)
 summary(glm1)
+confint(glm1)
+
+glm2<- glmer(error ~ approach*kpsum_c +  attitude_c + pain_c + mvpa_c +   (1|id) , family="binomial", 
+             data=data2, subset = (stimulus == "ap") & (c8 == "1" & c16 != "1"), na.action=na.omit)
+summary(glm2)
+confint(glm2)
 
 
 
