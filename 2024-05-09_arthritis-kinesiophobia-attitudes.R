@@ -19,23 +19,19 @@ library("lattice")
 library("lavaan")
 
 # read in data ------
-data1 <- read.csv(here("datasets_arthritis", "2024-05-09_data_arthritis.csv"))
+data1 <- read.csv(here("data-apathy", "2024-05-12_data_apathy.2.csv"))
 
 # tidying data  ------
 # Renaming factors ----- 
 names(data1)
 cleandata1 <- data1 %>%
   clean_names() %>%
-  rename(c8 = chronic8_arthritis)  %>%
-  rename(c16 = chronic16_rheumatoid_arthritis) %>%
   rename(exptime = total_elapsed_time) %>%
   rename(down = responsekey_down) %>%
   rename(language = subj) %>%
   rename(up = responsekey_up) %>%
   rename(daytime = time)
 names(cleandata1)
-unique(data1$chronic8_arthritis)
-unique(data1$chronic12_parkinson)
 unique(data1$id)
 unique(data1$gender)
 # adding column with trial number of the whole study
@@ -57,32 +53,24 @@ cleandata1 <- cleandata1 %>%
   mutate(height_m = (height/100))
 cleandata1 <- cleandata1 %>%
   mutate(bmi = (weight/I(height_m^2)))
+unique(cleandata1$bmi)
 #plot(cleandata1$bmi)
-describe(cleandata1$weight)
-
-
-
-cleanlightdata1 <- cleandata1[cleandata1$trialcode != "fixation" & 
-                                cleandata1$trialcode != "reminder" & 
-                                cleandata1$trialcode != "too_slow" &
-                                cleandata1$trialcode != "instructionimages"&
-                                cleandata1$trialcode != "error" 
-                              , ] 
-
+#describe(cleandata1$weight)
+#unique(cleandata1$id)
 
 # removing useless conditions from the "trialcode" column ------
 # removing first 10 trials of each block ------
-unique (cleandata1$age)
 cleanlightdata1 <- cleandata1[cleandata1$trialcode != "fixation" & 
                                       cleandata1$trialcode != "reminder" & 
                                       cleandata1$trialcode != "too_slow" &
                                       cleandata1$trialcode != "instructionimages"&
-                                      cleandata1$trialcode != "error" &
+                                      cleandata1$trialcode != "error" & # screen information participants they made an error
+                                      cleandata1$lars11 == "5" & # attention check question
                                       cleandata1$latency < 3000 &
                                       cleandata1$latency > 150 &
                                       cleandata1$height < 250 &
                                       cleandata1$height > 50 &
-                                      cleandata1$weight < 300 &
+                                      cleandata1$weight < 250 &
                                       cleandata1$weight > 30 &
 
                                 # remove 3 first trial of each condition
@@ -119,7 +107,7 @@ cleanlightdata1 <- cleandata1[cleandata1$trialcode != "fixation" &
                                       cleandata1$trial_number_study != "30" 
                                       , ] 
 unique (cleanlightdata1$sex)
-
+unique(cleanlightdata1$id)
 # Renaming block numbers -----
 class(cleanlightdata1$block_num)
 cleanlightdata1$block_num <- as.factor(as.numeric(cleanlightdata1$block_num))
@@ -185,7 +173,7 @@ cleanlightdata1$avoid.1.approach.0[is.element(cleanlightdata1$approach  ,c("1"))
 cleanlightdata1$avoid.1.approach.0[is.element(cleanlightdata1$approach  ,c("0"))] <- "1"
 
 # reversing coding of correct trial = 1 and error = 0 to correct trial = 0 and error = 1
-cleanlightdata1$errorcleanlightdata1$error <- NA
+cleanlightdata1$error <- NA
 cleanlightdata1$error[is.element(cleanlightdata1$correct  ,c("1"))] <- "0"
 cleanlightdata1$error[is.element(cleanlightdata1$correct  ,c("0"))] <- "1"
 cleanlightdata1$error <- as.numeric(as.character(cleanlightdata1$error))
@@ -246,7 +234,6 @@ cleanlightdata1$kp11r[is.element(cleanlightdata1$kp11 ,c("5"))] <- "3"
 cleanlightdata1$kp11r[is.element(cleanlightdata1$kp11 ,c("6"))] <- "2"
 cleanlightdata1$kp11r[is.element(cleanlightdata1$kp11 ,c("7"))] <- "1"
 
-
 # Creating binary variable for mobile phone vs. PC or laptop
 unique(cleanlightdata1$computer_platform)
 cleanlightdata1$computer01<- NA
@@ -255,6 +242,114 @@ cleanlightdata1$computer01[is.element(cleanlightdata1$computer_platform ,c("ios"
 cleanlightdata1$computer01[is.element(cleanlightdata1$computer_platform ,c("mac"))] <- "1"
 cleanlightdata1$computer01[is.element(cleanlightdata1$computer_platform ,c("win"))] <- "1"
 unique(cleanlightdata1$computer01)
+
+
+# Reversing code apathy (LARS)
+unique(cleandata1$lars1)
+unique(cleanlightdata1$lars1)
+cleanlightdata1$lars1ref<- NA
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("7"))] <- "1"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("6"))] <- "2"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("5"))] <- "3"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("4"))] <- "4"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("3"))] <- "5"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("2"))] <- "6"
+cleanlightdata1$lars1ref[is.element(cleanlightdata1$lars1 ,c("1"))] <- "7"
+unique(cleanlightdata1$lars1ref)
+
+cleanlightdata1$lars2ref<- NA
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("1"))] <- "7"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("2"))] <- "6"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("3"))] <- "5"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("4"))] <- "4"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("5"))] <- "3"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("6"))] <- "2"
+cleanlightdata1$lars2ref[is.element(cleanlightdata1$lars2 ,c("7"))] <- "1"
+unique(cleanlightdata1$lars2ref)
+
+cleanlightdata1$lars3ref<- NA
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("1"))] <- "7"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("2"))] <- "6"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("3"))] <- "5"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("4"))] <- "4"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("5"))] <- "3"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("6"))] <- "2"
+cleanlightdata1$lars3ref[is.element(cleanlightdata1$lars3 ,c("7"))] <- "1"
+unique(cleanlightdata1$lars3ref)
+
+cleanlightdata1$lars4ref<- NA
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("1"))] <- "7"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("2"))] <- "6"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("3"))] <- "5"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("4"))] <- "4"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("5"))] <- "3"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("6"))] <- "2"
+cleanlightdata1$lars4ref[is.element(cleanlightdata1$lars4 ,c("7"))] <- "1"
+unique(cleanlightdata1$lars4ref)
+
+cleanlightdata1$lars5ref<- NA
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("1"))] <- "7"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("2"))] <- "6"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("3"))] <- "5"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("4"))] <- "4"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("5"))] <- "3"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("6"))] <- "2"
+cleanlightdata1$lars5ref[is.element(cleanlightdata1$lars5 ,c("7"))] <- "1"
+unique(cleanlightdata1$lars5ref)
+
+cleanlightdata1$lars6ref<- NA
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("1"))] <- "7"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("2"))] <- "6"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("3"))] <- "5"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("4"))] <- "4"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("5"))] <- "3"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("6"))] <- "2"
+cleanlightdata1$lars6ref[is.element(cleanlightdata1$lars6 ,c("7"))] <- "1"
+
+cleanlightdata1$lars7ref<- NA
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("1"))] <- "7"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("2"))] <- "6"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("3"))] <- "5"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("4"))] <- "4"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("5"))] <- "3"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("6"))] <- "2"
+cleanlightdata1$lars7ref[is.element(cleanlightdata1$lars7 ,c("7"))] <- "1"
+
+cleanlightdata1$lars8ref<- NA
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("1"))] <- "7"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("2"))] <- "6"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("3"))] <- "5"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("4"))] <- "4"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("5"))] <- "3"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("6"))] <- "2"
+cleanlightdata1$lars8ref[is.element(cleanlightdata1$lars8 ,c("7"))] <- "1"
+
+cleanlightdata1$lars9ref<- NA
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("1"))] <- "7"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("2"))] <- "6"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("3"))] <- "5"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("4"))] <- "4"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("5"))] <- "3"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("6"))] <- "2"
+cleanlightdata1$lars9ref[is.element(cleanlightdata1$lars9 ,c("7"))] <- "1"
+
+cleanlightdata1$lars10ref<- NA
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("1"))] <- "7"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("2"))] <- "6"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("3"))] <- "5"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("4"))] <- "4"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("5"))] <- "3"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("6"))] <- "2"
+cleanlightdata1$lars10ref[is.element(cleanlightdata1$lars10 ,c("7"))] <- "1"
+
+cleanlightdata1$lars12ref<- NA
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("1"))] <- "7"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("2"))] <- "6"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("3"))] <- "5"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("4"))] <- "4"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("5"))] <- "3"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("6"))] <- "2"
+cleanlightdata1$lars12ref[is.element(cleanlightdata1$lars12 ,c("7"))] <- "1"
 
 # creating a columns of the different pictograms appearing on the screen for each trial
 cleanlightdata1 <- cleanlightdata1 %>%
@@ -304,6 +399,7 @@ cleanlightdata1_mean_by_cond <-
 
 cleanlightdata1 <- left_join(cleanlightdata1, cleanlightdata1_mean_by_cond, by = "id")
 #limpse(cleanlightdata1)
+
 
 cleanlightdata1_error_approach_avoid <-
   cleanlightdata1_mean_by_cond %>%
@@ -381,15 +477,12 @@ cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
   mutate(mean_error_geom_direction = mean(mean_error_geom_direction, na.rm=T)) 
 
 # # Change variable class
-class(cleanlightmeansdata1$c8)
 cleanlightmeansdata1$manikintop <- as.factor(as.numeric(cleanlightmeansdata1$manikintop))
 cleanlightmeansdata1$approach <- as.factor(as.numeric(cleanlightmeansdata1$approach))
 cleanlightmeansdata1$stimulus <- as.factor(as.character(cleanlightmeansdata1$stimulus))
 cleanlightmeansdata1$trialcode <- as.factor(as.character(cleanlightmeansdata1$trialcode))
 cleanlightmeansdata1$geomfigure <- as.factor(as.numeric(cleanlightmeansdata1$geomfigure))
 cleanlightmeansdata1$id <- as.factor(as.character(cleanlightmeansdata1$id))
-cleanlightmeansdata1$c8 <- as.factor(as.integer(cleanlightmeansdata1$c8))
-cleanlightmeansdata1$c16 <- as.factor(as.integer(cleanlightmeansdata1$c16))
 cleanlightmeansdata1$age <- as.numeric(as.integer(cleanlightmeansdata1$age))
 cleanlightmeansdata1$sex01 <- as.factor(as.character(cleanlightmeansdata1$sex01))
 cleanlightmeansdata1$gender01 <- as.factor(as.character(cleanlightmeansdata1$gender01))
@@ -397,8 +490,6 @@ cleanlightmeansdata1$pictograms <- as.character(as.integer(cleanlightmeansdata1$
 cleanlightmeansdata1$sum_chronic <- as.numeric(as.integer(cleanlightmeansdata1$sum_chronic))
 cleanlightmeansdata1$computerO1 <- as.factor(as.character(cleanlightmeansdata1$computer01))
 #unique(cleanlightmeansdata1$attitudeO1)
-#unique(cleanlightmeansdata1$c8)
-#unique(cleanlightmeansdata1$c16)
 #unique(cleanlightmeansdata1$stimulus)
 #unique(cleanlightmeansdata1$pictograms)
 cleanlightmeansdata1$kp1 <- as.numeric(as.integer(cleanlightmeansdata1$kp1))
@@ -412,6 +503,45 @@ cleanlightmeansdata1$kp8 <- as.numeric(as.integer(cleanlightmeansdata1$kp8))
 cleanlightmeansdata1$kp9 <- as.numeric(as.integer(cleanlightmeansdata1$kp9))
 cleanlightmeansdata1$kp10 <- as.numeric(as.integer(cleanlightmeansdata1$kp10))
 cleanlightmeansdata1$kp11r <- as.numeric(as.character(cleanlightmeansdata1$kp11r))
+
+
+class(cleanlightmeansdata1$lars1)
+unique(cleanlightmeansdata1$lars1)
+cleanlightmeansdata1$lars1ref <- as.numeric(as.integer(cleanlightmeansdata1$lars1ref))
+cleanlightmeansdata1$lars2ref <- as.numeric(as.integer(cleanlightmeansdata1$lars2ref))
+cleanlightmeansdata1$lars3ref <- as.numeric(as.integer(cleanlightmeansdata1$lars3ref))
+cleanlightmeansdata1$lars4ref <- as.numeric(as.integer(cleanlightmeansdata1$lars4ref))
+cleanlightmeansdata1$lars5ref <- as.numeric(as.integer(cleanlightmeansdata1$lars5ref))
+cleanlightmeansdata1$lars6ref <- as.numeric(as.integer(cleanlightmeansdata1$lars6ref))
+cleanlightmeansdata1$lars7ref <- as.numeric(as.integer(cleanlightmeansdata1$lars7ref))
+cleanlightmeansdata1$lars8ref <- as.numeric(as.integer(cleanlightmeansdata1$lars8ref))
+cleanlightmeansdata1$lars9ref <- as.numeric(as.integer(cleanlightmeansdata1$lars9ref))
+cleanlightmeansdata1$lars10ref <- as.numeric(as.integer(cleanlightmeansdata1$lars10ref))
+cleanlightmeansdata1$lars12ref <- as.numeric(as.integer(cleanlightmeansdata1$lars12ref))
+
+class(cleanlightmeansdata1$dass1)
+unique(cleanlightmeansdata1$dass21)
+cleanlightmeansdata1$dass1 <- as.numeric(as.integer(cleanlightmeansdata1$dass1))
+cleanlightmeansdata1$dass2 <- as.numeric(as.integer(cleanlightmeansdata1$dass2))
+cleanlightmeansdata1$dass3 <- as.numeric(as.integer(cleanlightmeansdata1$dass3))
+cleanlightmeansdata1$dass4 <- as.numeric(as.integer(cleanlightmeansdata1$dass4))
+cleanlightmeansdata1$dass5 <- as.numeric(as.integer(cleanlightmeansdata1$dass5))
+cleanlightmeansdata1$dass6 <- as.numeric(as.integer(cleanlightmeansdata1$dass6))
+cleanlightmeansdata1$dass7 <- as.numeric(as.integer(cleanlightmeansdata1$dass7))
+cleanlightmeansdata1$dass8 <- as.numeric(as.integer(cleanlightmeansdata1$dass8))
+cleanlightmeansdata1$dass9 <- as.numeric(as.integer(cleanlightmeansdata1$dass9))
+cleanlightmeansdata1$dass10 <- as.numeric(as.integer(cleanlightmeansdata1$dass10))
+cleanlightmeansdata1$dass11 <- as.numeric(as.integer(cleanlightmeansdata1$dass11))
+cleanlightmeansdata1$dass12 <- as.numeric(as.integer(cleanlightmeansdata1$dass12))
+cleanlightmeansdata1$dass13 <- as.numeric(as.integer(cleanlightmeansdata1$dass13))
+cleanlightmeansdata1$dass14 <- as.numeric(as.integer(cleanlightmeansdata1$dass14))
+cleanlightmeansdata1$dass15 <- as.numeric(as.integer(cleanlightmeansdata1$dass15))
+cleanlightmeansdata1$dass16 <- as.numeric(as.integer(cleanlightmeansdata1$dass16))
+cleanlightmeansdata1$dass17 <- as.numeric(as.integer(cleanlightmeansdata1$dass17))
+cleanlightmeansdata1$dass18 <- as.numeric(as.integer(cleanlightmeansdata1$dass18))
+cleanlightmeansdata1$dass19 <- as.numeric(as.integer(cleanlightmeansdata1$dass19))
+cleanlightmeansdata1$dass20 <- as.numeric(as.integer(cleanlightmeansdata1$dass20))
+cleanlightmeansdata1$dass21 <- as.numeric(as.integer(cleanlightmeansdata1$dass21))
 
 # Adding column latency minus the mean latency for geometrical figures 
 # irrespective of the type of figure (circle, square) and the type of movement (approach, avoid)
@@ -473,14 +603,36 @@ cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
 hist(cleanlightmeansdata1$kpsum)
 class(cleanlightmeansdata1$kpsum)
 
+# creating column with mean lars
+cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
+  mutate(larsmean = rowMeans(cleanlightmeansdata1[,c('lars1ref', 'lars2ref', 'lars3ref', 'lars4ref', 'lars5ref', 'lars6ref','lars7ref', 'lars8ref', 'lars9ref','lars10ref', 'lars12ref')], na.rm=TRUE))
+hist(cleanlightmeansdata1$larsmean)
+class(cleanlightmeansdata1$larsmean)
+
+# creating column with mean dass
+cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
+  mutate(dassmean = rowMeans(cleanlightmeansdata1[,c('dass1', 'dass2', 'dass4', 'dass6','dass7', 'dass8', 'dass9','dass11', 'dass12','dass14', 'dass15','dass18', 'dass19', 'dass20')], na.rm=TRUE))
+hist(cleanlightmeansdata1$dassmean)
+
+# creating column with lars sum
+cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
+  mutate(lars_sum = rowSums(cleanlightmeansdata1[,c('lars1ref', 'lars2ref', 'lars3ref', 'lars4ref', 'lars5ref', 'lars6ref','lars7ref', 'lars8ref', 'lars9ref','lars10ref', 'lars12ref')], na.rm=TRUE))
+hist(cleanlightmeansdata1$lars_sum)
+class(cleanlightmeansdata1$lars_sum)
+
+# creating column with dass sum
+cleanlightmeansdata1 <- cleanlightmeansdata1 %>%
+  mutate(dass_sum = rowSums(cleanlightmeansdata1[,c('dass1', 'dass2', 'dass4', 'dass6','dass7', 'dass8', 'dass9','dass11', 'dass12','dass14', 'dass15','dass18', 'dass19', 'dass20')], na.rm=TRUE))
+hist(cleanlightmeansdata1$dass_sum)
+
 
 # Creating new file -----
 data2 <- cleanlightmeansdata1
+
 #write.csv(data2, "data2.csv")
-plot(data2$kpsum)
 describe(data2$age)
 plot(data2$height)
-unique(data2$id) # n =197
+unique(data2$id) # n = 365
 
 # exploring data -------
 glimpse(data2)
@@ -489,7 +641,6 @@ hist(data2$age)
 hist(data2$age, breaks=50)
 describe (data2$relativelatency)
 unique(data2$stimulus)
-
 
 # Reorder stimulus
 unique(data2$stimulus)
@@ -509,8 +660,6 @@ data2$stimulus_ap1_sed0[is.element(data2$stimulus ,c("circle"))] <- "2"
 data2$stimulus_ap1_sed0[is.element(data2$stimulus  ,c("square"))] <- "3"
 unique(data2$stimulus_ap1_sed0)
 
-
-
 # centration  -----
 data2$age_c <- scale (data2$age, center = TRUE, scale = TRUE)
 data2$mvpa_c <- scale (data2$mvpa, center = TRUE, scale = TRUE)
@@ -525,10 +674,20 @@ data2$pain_c <- scale (data2$pain, center = TRUE, scale = TRUE)
 data2$biasapraw_c <- scale (data2$biasapraw, center = TRUE, scale = TRUE)
 data2$biassedraw_c <- scale (data2$biassedraw, center = TRUE, scale = TRUE)
 data2$attitude_c <- scale (data2$attitude, center = TRUE, scale = TRUE)
+data2$intention_c <- scale (data2$intention, center = TRUE, scale = TRUE)
+data2$larsmean_c <- scale (data2$larsmean, center = TRUE, scale = TRUE)
+data2$dassmean_c <- scale (data2$dassmean, center = TRUE, scale = TRUE)
+data2$lars_sum_c <- scale (data2$lars_sum, center = TRUE, scale = TRUE)
+data2$dass_sum_c <- scale (data2$dass_sum, center = TRUE, scale = TRUE)
+
+# center apathy on specific values to test the value at which statistical significance disappear in statistical models
+data2$lars_centered_on_55 <- data2$lars_sum - 55
+data2$lars_centered_on_70 <- data2$lars_sum - 70
+
 
 # aggrefate data per subject
-DataAggreg = aggregate (cbind(c8, c16, kpsum, attitude, pain, age, sex01, mvpa, gender01,
-                              bmi, sum_chronic, moderatepa, vigorouspa, biassedcorr, biasapcorr)
+DataAggreg = aggregate (cbind(kpsum, attitude,intention, pain, age, sex01, mvpa, gender01,
+                              bmi, sum_chronic, moderatepa, vigorouspa, biassedcorr, biasapcorr, larsmean, dassmean, lars_sum, dass_sum)
                         ~id, data=data2, FUN=mean)
 
 # centration
@@ -538,28 +697,16 @@ DataAggreg$mvpa_c <- scale (DataAggreg$mvpa, center = TRUE, scale = TRUE)
 DataAggreg$pain_c <- scale (DataAggreg$pain, center = TRUE, scale = TRUE)
 DataAggreg$kpsum_c <- scale (DataAggreg$kpsum, center = TRUE, scale = TRUE)
 DataAggreg$attitude_c <- scale (DataAggreg$attitude, center = TRUE, scale = TRUE)
+DataAggreg$intention_c <- scale (DataAggreg$intention, center = TRUE, scale = TRUE)
 DataAggreg$biassedcorr_c <- scale (DataAggreg$biassedcorr, center = TRUE, scale = TRUE)
 DataAggreg$biasapcorr_c <- scale (DataAggreg$biasapcorr, center = TRUE, scale = TRUE)
-
-# Reverse Rhumathoid Arthritis no = 1 yest = 2 to no = 1 yes = 0
-unique(DataAggreg$c16)
-DataAggreg$c16.1.0<- NA
-DataAggreg$c16.1.0[is.element(DataAggreg$c16 ,c("1"))] <- "1"
-DataAggreg$c16.1.0[is.element(DataAggreg$c16  ,c("2"))] <- "0"
-unique(DataAggreg$c16.1.0)
-
-# Reverse Osteo Arthritis no = 1 yes = 2 to no = 1 yes = 0
-unique(DataAggreg$c8)
-DataAggreg$c8.1.0<- NA
-DataAggreg$c8.1.0[is.element(DataAggreg$c8 ,c("1"))] <- "1"
-DataAggreg$c8.1.0[is.element(DataAggreg$c8  ,c("2"))] <- "0"
-unique(DataAggreg$c8.1.0)
+DataAggreg$larsmean_c <- scale (DataAggreg$larsmean, center = TRUE, scale = TRUE)
+DataAggreg$dassmean_c <- scale (DataAggreg$dassmean, center = TRUE, scale = TRUE)
+DataAggreg$lars_sum_c <- scale (DataAggreg$lars_sum, center = TRUE, scale = TRUE)
+DataAggreg$dass_sum_c <- scale (DataAggreg$dass_sum, center = TRUE, scale = TRUE)
 
 # Change variable class
 DataAggreg$sex01 <- as.factor(as.numeric(DataAggreg$sex01))
-DataAggreg$c8 <- as.factor(as.numeric(DataAggreg$c8))
-DataAggreg$c16 <- as.factor(as.numeric(DataAggreg$c16))
-DataAggreg$c16.1.0 <- as.factor(as.numeric(DataAggreg$c16.1.0))
 
 # histograms
 hist (DataAggreg$kpsum)
@@ -569,7 +716,6 @@ hist (DataAggreg$age)
 hist (DataAggreg$age, breaks = c(19.9,29.9,39.9,49.9,59.9,69.9,79.9,89.9), ylim=c(0, 60), xlab = "Age (years)", ylab = "Number of particiants")
 hist (DataAggreg$bmi)
 
-
 #Number of ...
 sum(with(DataAggreg,sex01 == "1"))
 sum(with(DataAggreg,sex01 == "2"))
@@ -578,20 +724,11 @@ sum(with(DataAggreg,age < "40"))
 sum(with(DataAggreg,age < "50"))
 sum(with(DataAggreg,age < "60"))
 sum(with(DataAggreg,age < "70"))
-sum(with(DataAggreg,age > "80" & (c16 == "2" | c8 == "2")))
+sum(with(DataAggreg,age > "80"))
 sum(with(DataAggreg,age < "90"))
-sum(with(DataAggreg,c8 == "0"))
-sum(with(DataAggreg,c8 == "1"))
-sum(with(DataAggreg,c8 == "2"))
-sum(with(DataAggreg,c16 == "0"))
-sum(with(DataAggreg,c16 == "1"))
-sum(with(DataAggreg,c16 == "2"))
-sum(with(DataAggreg,c16 == "2" | c8 == "2"))
-sum(with(DataAggreg,c16 == "1" & c8 == "2"))
 
 # unique
-unique(DataAggreg$c8)
-unique(DataAggreg$c16)
+unique(DataAggreg$age)
 unique(DataAggreg$id) # n = 196
 #write.csv(DataAggreg, "DataAggreg.csv")
 
@@ -600,9 +737,11 @@ unique(DataAggreg$id) # n = 196
 data_all <- DataAggreg # all participants
 unique(data_all$id) 
 describe (data_all$age)
-describe (data_all$kpsum)
+describe (data_all$larsmean)
+describe (data_all$dassmean)
+describe (data_all$lars_sum)
+describe (data_all$dass_sum)
 describe (data_all$mvpa)
-describe (data_all$pain)
 describe (data_all$bmi)
 describe (data_all$sum_chronic)
 sum(with(data_all,sex01 == "1"))
@@ -611,130 +750,96 @@ unique (data_all$gender)
 plot (data_all$gender01~data_all$sex01)
 data_sex_gender <- data_all %>% filter((sex01 %in% "2") & (gender01 %in% "1"))
 unique(data_sex_gender$id) 
+data_sex_gender2 <- data_all %>% filter((sex01 %in% "1") & (gender01 %in% "2"))
+unique(data_sex_gender2$id) 
 
-data_OA <- DataAggreg %>% filter((c8 %in% "2") & (c16 %in% "1")) # participants with Osteoarthritis
-unique(data_OA$id) 
-describe (data_OA$age)
-describe (data_OA$mvpa)
-describe (data_OA$kpsum)
-describe (data_OA$pain)
-describe (data_OA$bmi)
-describe (data_OA$sum_chronic)
-sum(with(data_OA,sex01 == "1"))
-sum(with(data_OA,sex01 == "2"))
-
-data_RA <- DataAggreg %>% filter(c16 %in% "2") # participants with Rheumatoid Arthritis
-unique(data_RA$id) 
-describe (data_RA$age)
-describe (data_RA$mvpa)
-describe (data_RA$kpsum)
-describe (data_RA$pain)
-describe (data_RA$bmi)
-describe (data_RA$sum_chronic)
-sum(with(data_RA,sex01 == "1"))
-sum(with(data_RA,sex01 == "2"))
+# number of observations (reaction times) in several conditions
+data_sed <- subset(data2, stimulus == "sed")
+data_ap <- subset(data2, stimulus == "ap")
+data_correct <- subset(data2, correct == "1")
+data_sed_correct <- subset(data2, stimulus == "sed" & correct == "1")
+data_ap_correcct <- subset(data2, stimulus == "ap" & correct == "1")
 
 
 ### STATISTICAL MODELS
-
-#Effect of kinesiophobia on MVPA in OA (osteo arthritis)
-lm1.1 <- lm (mvpa ~ kpsum_c*c8.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) # no Rheumatoid Arthritis
-summary(lm1.1)
-confint(lm1.1) #95% confidence interval
-
-#Effect of kinesiophobia on MVPA in OA (osteo arthritis)
-lm1.2 <- lm (mvpa ~ kpsum_c*c8.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c16 == 1), na.action=na.omit) # no Rheumatoid Arthritis
-summary(lm1.2)
-confint(lm1.2) #95% confidence interval
-#plot(allEffects(lm1.1))
-plot(allEffects(lm1.1), select = 6)
-
-# Effect of kinesiophobia on MVPA in RA (rheumatoid arthritis)
-lm1.3 <- lm (mvpa ~ kpsum_c*c16.1.0 + pain_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
-summary(lm1.3)
-confint(lm1.3)
-
-
-# Mediation analysis by attitude in Osteo Arthritis 
-mediation.1 <- lm (mvpa ~ kpsum_c + pain_c  + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+# Mediation analysis: Mediating effect of attitude on the association between apathy and intention to be active in Osteo Arthritis 
+mediation.1 <- lm (intention ~  lars_sum + dass_sum_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
 summary(mediation.1)
 confint(mediation.1)
 plot(allEffects(mediation.1 ), select = 1)
 
-mediation.2 <- lm (attitude ~ kpsum_c + pain_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.2 <- lm (attitude ~ lars_sum_c  + dass_sum_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
 summary(mediation.2)
 confint(mediation.2)
-plot(allEffects(mediation.2 ), select = 1)
+plot(allEffects(mediation.2), select = 1)
 
-mediation.3 <- lm (mvpa ~ attitude + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.3 <- lm (intention ~ attitude_c + lars_sum_c  + dass_sum_c + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
 summary(mediation.3)
 confint(mediation.3)
-plot(allEffects(mediation.3 ), select = 1)
+plot(allEffects(mediation.3), select = 1)
 
 
-data3  <- DataAggreg %>% filter((c8 %in% "2") & (c16 %in% "1"))
-unique(data3$id) 
-print(data3)
-sum(with(data3,c8 == "2"))
+# Mediation analysis: Mediating effect of intention on the association between apathy and physical activity in Osteo Arthritis 
+mediation.4 <- lm (mvpa ~ lars_sum_c + dass_sum_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
+summary(mediation.4)
+confint(mediation.4)
+plot(allEffects(mediation.4), select = 1)
 
+mediation.5 <- lm (intention ~ lars_sum_c  + dass_sum_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
+summary(mediation.5)
+confint(mediation.5)
+plot(allEffects(mediation.5), select = 1)
 
-model <- ' # direct effect
-             mvpa_c ~ p*kpsum_c + c1*pain_c + c2*biasapcorr_c + c3*biassedcorr_c+ c4*age_c + c5*sex01 + c6*bmi_c + c7*sum_chronic
-           # mediator
-             attitude ~ a*kpsum_c + c8*pain_c + c9*biasapcorr_c + c10*biassedcorr_c+ c11*age_c + c12*sex01 + c13*bmi_c + c14*sum_chronic
-             mvpa_c ~ b*attitude 
-           # indirect effect (a*b)
-             ab := a*b 
-           # total effect
-             total := p + (a*b)
-         '
-fit <- sem(model, data = data_OA)
-summary(fit)
-parameterEstimates(fit) #to extract 95 CI
+mediation.6 <- lm (mvpa ~ intention_c + lars_sum_c  + dass_sum_c + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, na.action=na.omit) 
+summary(mediation.6)
+confint(mediation.6)
+plot(allEffects(mediation.6), select = 1)
+
 
 
 # Linear mixed effects model testing the effect of kinesiophobia on corrected Reaction Time as a function of stimulus (physical activity, sedentary behavior)
 # and action (approach, avoid)
 
-lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*kpsum_c + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
-               data=data2, subset = (stimulus == "sed"| stimulus == "ap") & (c16 == 0) & (c8 == 1) & error == 0 , REML=T, na.action=na.omit)
+lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*lars_sum + dass_sum_c + attitude_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
+               data=data2, subset = (stimulus == "sed"| stimulus == "ap") & error == 0 , REML=T, na.action=na.omit)
 # We tried the model with a more complex random structure including  (1|stimulus_ap0_sed1) but it failed to converge
-summary(lmm1.1) # kpsum NS
-confint(lmm1.1)
-
-
+summary(lmm1.1) 
+#confint(lmm1.1)
 plot(allEffects(lmm1.1))
-plot(allEffects(lmm1.1), select = 9)
-plot(Effect(c("approach", "stimulus_ap0_sed1"),mod = lmm1.1))
+plot(allEffects(lmm1.1, xlevels = list(lars_sum = c(10:77))), select = 9)
 
-lmm1.2 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap0_sed1 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 +sum_chronic +  (1|id) + (1|pictograms), 
-             data=data2, subset = (stimulus == "sed"| stimulus == "ap") & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
+
+lmm1.2 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*stimulus_ap0_sed1*lars_sum_c + dass_sum_c + attitude_c + mvpa_c + age_c + sex01 + bmi_c + computer01 +sum_chronic +  (1|id) + (1|approach)  + (1|pictograms), 
+             data=data2, subset = (stimulus == "sed"| stimulus == "ap") & error == 0, REML=T, na.action=na.omit)
 summary(lmm1.2) 
-confint(lmm1.2)
-plot(allEffects(lmm1.2))
+#confint(lmm1.2)
+#plot(allEffects(lmm1.2))
 plot(allEffects(lmm1.2), select = 9)
 
-lmm1.3 <- lmer(relativelatencygeomdirection  ~ 1 + approach*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + (1|id) +sum_chronic +  (1|pictograms), 
-               data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
+lmm1.3 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap1_sed0*lars_sum + dass_sum_c + attitude_c + mvpa_c + age_c + sex01 + bmi_c + computer01 +sum_chronic + (1|id) + (1|approach) + (1|pictograms), 
+               data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0, REML=T, na.action=na.omit)
 summary(lmm1.3)
-confint(lmm1.3)
+#confint(lmm1.3)
+#plot(allEffects(lmm1.3))
+plot(allEffects(lmm1.3), select = 9)
 
-lmm1.4 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*kpsum_c*stimulus_ap1_sed0 + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
-               data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0 & c8 == 1 & c16 != 1, REML=T, na.action=na.omit)
-summary(lmm1.4) # kpsum NS
-confint(lmm1.4)
+lmm1.4 <- lmer(relativelatencygeomdirection  ~ 1 + avoid.1.approach.0*stimulus_ap1_sed0*lars_sum_c + dass_sum_c + attitude_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
+               data=data2, subset = (stimulus == "sed"| stimulus == "ap")  & error == 0, REML=T, na.action=na.omit)
+summary(lmm1.4) 
+#confint(lmm1.4)
 
 
-glm1<- glmer(error ~ approach*kpsum_c +  attitude_c + pain_c + mvpa_c +   (1|id) , family="binomial", 
-              data=data2, subset = (stimulus == "sed") & (c8 == "1" & c16 != "1"), na.action=na.omit)
+glm1<- glmer(error ~ avoid.1.approach.0*lars_sum_c + dass_sum_c +  attitude_c + mvpa_c + (1|id), family="binomial", 
+             data=data2, subset = (stimulus == "sed"), na.action=na.omit)
 summary(glm1)
-confint(glm1)
+#plot(allEffects(glm1))
+#confint(glm1)
 
-glm2<- glmer(error ~ approach*kpsum_c +  attitude_c + pain_c + mvpa_c +   (1|id) , family="binomial", 
-             data=data2, subset = (stimulus == "ap") & (c8 == "1" & c16 != "1"), na.action=na.omit)
+glm2<- glmer(error ~ avoid.1.approach.0*lars_sum_c + dass_sum_c + attitude_c + mvpa_c + (1|id), family="binomial", 
+             data=data2, subset = (stimulus == "ap"), na.action=na.omit)
 summary(glm2)
+plot(allEffects(glm2))
 confint(glm2)
-
 
 
 ## Assumptions for linear mixed-effects models A
