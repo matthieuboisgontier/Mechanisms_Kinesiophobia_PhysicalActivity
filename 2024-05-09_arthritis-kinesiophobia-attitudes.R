@@ -666,7 +666,7 @@ summary(mediation.2)
 confint(mediation.2)
 plot(allEffects(mediation.2 ), select = 1)
 
-mediation.3 <- lm (mvpa ~ attitude + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.3 <- lm (mvpa ~ attitude_c + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.3)
 confint(mediation.3)
 plot(allEffects(mediation.3 ), select = 1)
