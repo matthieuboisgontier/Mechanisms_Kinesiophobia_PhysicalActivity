@@ -699,7 +699,7 @@ parameterEstimates(fit) #to extract 95 CI
 lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*kpsum_c + attitude_c + pain_c + mvpa_c + age_c + sex01 + bmi_c + computer01 + sum_chronic + (1|id) + (1|pictograms), 
                data=data2, subset = (stimulus == "sed"| stimulus == "ap") & (c16 == 0) & (c8 == 1) & error == 0 , REML=T, na.action=na.omit)
 # We tried the model with a more complex random structure including  (1|stimulus_ap0_sed1) but it failed to converge
-summary(lmm1.1) # kpsum NS
+summary(lmm1.1, correlation = TRUE) # kpsum NS
 confint(lmm1.1)
 
 
