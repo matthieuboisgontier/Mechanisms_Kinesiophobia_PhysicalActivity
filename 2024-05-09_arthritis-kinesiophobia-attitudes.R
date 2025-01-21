@@ -674,7 +674,6 @@ plot(allEffects(mediation.2b), select = 1)
 mediation.3 <- lm (mvpa ~ kpsum_c + attitude_c + pain_c  + biasapcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.3)
 confint(mediation.3)
-plot(allEffects(mediation.3), select = 1)
 
 
 # Moderation Model in Osteoarthritis 
