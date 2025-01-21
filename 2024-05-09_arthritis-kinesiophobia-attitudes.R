@@ -655,42 +655,35 @@ summary(lm1.3)
 confint(lm1.3)
 
 
-# Mediation analysis by attitude in Osteo Arthritis 
-mediation.1 <- lm (mvpa ~ kpsum_c + pain_c  + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+# Mediation Model in Osteoarthritis 
+mediation.1 <- lm (mvpa ~ kpsum_c + biasapcorr_c + age_c + sex01 + bmi_c + pain_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.1)
 confint(mediation.1)
-plot(allEffects(mediation.1 ), select = 1)
+plot(allEffects(mediation.1), select = 1)
 
-mediation.2 <- lm (attitude ~ kpsum_c + pain_c + biasapcorr_c + biassedcorr_c + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
-summary(mediation.2)
-confint(mediation.2)
-plot(allEffects(mediation.2 ), select = 1)
+mediation.2a <- lm (biasapcorr ~ kpsum_c + age_c + sex01 + bmi_c + pain_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+summary(mediation.2a)
+confint(mediation.2a)
+plot(allEffects(mediation.2a), select = 1)
 
-mediation.3 <- lm (mvpa ~ attitude_c + pain_c  + biasapcorr_c + biassedcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+mediation.2b <- lm (attitude ~ kpsum_c + age_c + sex01 + bmi_c + pain_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+summary(mediation.2b)
+confint(mediation.2b)
+plot(allEffects(mediation.2b), select = 1)
+
+mediation.3 <- lm (mvpa ~ kpsum_c + attitude_c + pain_c  + biasapcorr_c  + age_c + sex01 + bmi_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
 summary(mediation.3)
 confint(mediation.3)
-plot(allEffects(mediation.3 ), select = 1)
+plot(allEffects(mediation.3), select = 1)
 
 
-data3  <- DataAggreg %>% filter((c8 %in% "2") & (c16 %in% "1"))
-unique(data3$id) 
-print(data3)
-sum(with(data3,c8 == "2"))
-
-
-model <- ' # direct effect
-             mvpa_c ~ p*kpsum_c + c1*pain_c + c2*biasapcorr_c + c3*biassedcorr_c+ c4*age_c + c5*sex01 + c6*bmi_c + c7*sum_chronic
-           # mediator
-             attitude ~ a*kpsum_c + c8*pain_c + c9*biasapcorr_c + c10*biassedcorr_c+ c11*age_c + c12*sex01 + c13*bmi_c + c14*sum_chronic
-             mvpa_c ~ b*attitude 
-           # indirect effect (a*b)
-             ab := a*b 
-           # total effect
-             total := p + (a*b)
-         '
-fit <- sem(model, data = data_OA)
-summary(fit)
-parameterEstimates(fit) #to extract 95 CI
+# Moderation Model in Osteoarthritis 
+# center approach tendendcy towards physical activity (reaction time difference) on specific values to test the value at which statistical significance appears
+DataAggreg$biasapcorr_centered_on_101 <- DataAggreg$biasapcorr - 101
+moderation.1 <- lm (mvpa ~ kpsum_c*biasapcorr_c + kpsum_c*attitude_c +  age_c + sex01 + bmi_c + pain_c + sum_chronic, data=DataAggreg, subset = (c8 == 2) & (c16 == 1), na.action=na.omit) 
+summary(moderation.1)
+confint(moderation.1)
+plot(allEffects(moderation.1), select = 6)
 
 
 # Linear mixed effects model testing the effect of kinesiophobia on corrected Reaction Time as a function of stimulus (physical activity, sedentary behavior)
@@ -701,8 +694,6 @@ lmm1.1 <- lmer(relativelatencygeomdirection  ~ 1 + approach*stimulus_ap0_sed1*kp
 # We tried the model with a more complex random structure including  (1|stimulus_ap0_sed1) but it failed to converge
 summary(lmm1.1, correlation = TRUE) # kpsum NS
 confint(lmm1.1)
-
-
 plot(allEffects(lmm1.1))
 plot(allEffects(lmm1.1), select = 9)
 plot(Effect(c("approach", "stimulus_ap0_sed1"),mod = lmm1.1))
